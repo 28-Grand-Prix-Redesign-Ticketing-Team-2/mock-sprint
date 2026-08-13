@@ -148,6 +148,7 @@ export default function SignInPage() {
         <Link
           href="#"
           className="font-medium text-[#545f71] underline dark:text-white"
+          onClick={() => alert("Hellow World!")}
         >
           Forgot Password
         </Link>
