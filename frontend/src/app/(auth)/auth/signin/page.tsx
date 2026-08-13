@@ -53,14 +53,14 @@ export default function SignInPage() {
     }
   }
 
-  const handleGoogleSignIn = async () => {
-    try {
-      await signInWithGoogle()
-      router.replace('/dashboard')
-    } catch {
-      toast.error('Google sign-in failed. Please try again.')
-    }
-  }
+  // const handleGoogleSignIn = async () => {
+  //   try {
+  //     await signInWithGoogle()
+  //     router.replace('/dashboard')
+  //   } catch {
+  //     toast.error('Google sign-in failed. Please try again.')
+  //   }
+  // }
 
   return (
     <div className="space-y-6">
