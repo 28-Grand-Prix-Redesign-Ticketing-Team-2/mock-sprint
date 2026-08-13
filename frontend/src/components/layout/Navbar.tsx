@@ -6,18 +6,14 @@ import { LogOut, User } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 
 export function Navbar() {
-  // Original
-  // const router = useRouter()
-  // const { user, signOut } = useAuth()
-
-  // const handleSignOut = async () => {
-  //   await signOut()
-  //   router.replace('/auth/signin')
-  //   router.refresh()
-  // }
-
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
+
+  const handleSignOut = async () => {
+    await signOut()
+    router.replace('/auth/signin')
+    router.refresh()
+  }
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-zinc-200 px-4 dark:border-zinc-800 dark:bg-zinc-900">
@@ -35,15 +31,14 @@ export function Navbar() {
           <User className="h-4 w-4" />
         </Link>
 
-        {/* Commented to follow UX mockup */}
-        {/* <button
+        <button
           type="button"
           onClick={handleSignOut}
           className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
           aria-label="Sign out"
         >
           <LogOut className="h-4 w-4" />
-        </button> */}
+        </button>
       </div>
     </header>
   )
