@@ -42,7 +42,7 @@ export default function SignInPage() {
     try {
       await signInWithEmail(data.email, data.password)
       toast.success('Signed in successfully')
-      router.replace('/dashboard')
+      router.replace('/team')
       router.refresh()
     } catch (error: unknown) {
       if (error instanceof Error && error.message.includes('email-not-verified')) {
@@ -53,14 +53,14 @@ export default function SignInPage() {
     }
   }
 
-  const handleGoogleSignIn = async () => {
-    try {
-      await signInWithGoogle()
-      router.replace('/dashboard')
-    } catch {
-      toast.error('Google sign-in failed. Please try again.')
-    }
-  }
+  // const handleGoogleSignIn = async () => {
+  //   try {
+  //     await signInWithGoogle()
+  //     router.replace('/dashboard')
+  //   } catch {
+  //     toast.error('Google sign-in failed. Please try again.')
+  //   }
+  // }
 
   return (
     <div className="space-y-6">
