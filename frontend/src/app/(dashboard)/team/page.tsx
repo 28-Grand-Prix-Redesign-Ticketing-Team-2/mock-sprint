@@ -28,7 +28,7 @@ const teamMembers = [
     {
         name: "William Hok",
         role: "Developer",
-        blurb: "Build features and fix bugs",
+        blurb: null,
         image: null
     },
     {
