@@ -19,21 +19,21 @@ export default function TeamMemberCard( { name, role, blurb, image }: Props) {
         : blurb
 
     return (
-        <div className="flex flex-col items-center justify-center max-w-[200px]">
+        <div className="flex flex-col items-center justify-center max-w-[300px]">
             <div className="border bg-gray-100 mb-4">
                 {image ? (
                     <Image
                         src={image}
                         alt="Photo"
-                        width={200}
-                        height={200}
+                        width={300}
+                        height={300}
                     />
                 ) : (
                     <Image
                         src="/close_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png"
                         alt="Photo"
-                        width={200}
-                        height={200}
+                        width={300}
+                        height={300}
                     />
                 )}
             </div>
