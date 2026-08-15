@@ -53,9 +53,7 @@ export default async function TeamPage() {
         <h2 className="text-[32px] text-[#545F71] font-bold tracking-tight pr-8 pb-8 pl-8">Team 28 - Grand Prix Redesign Ticketing - Team 2</h2>
         <div className='grid grid-cols-3 gap-4 items-stretch'>
             {teamMembers.map(member => (
-              <div className='border rounded-2xl bg-white p-4 '>
-                <TeamMemberCard key={member.name} {...member}/>
-              </div>
+              <TeamMemberCard key={member.name} {...member}/>
             ))}
         </div>
       </div>
