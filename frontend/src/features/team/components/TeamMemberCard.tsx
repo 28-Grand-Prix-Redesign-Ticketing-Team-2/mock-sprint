@@ -20,7 +20,7 @@ export default function TeamMemberCard( { name, role, blurb, image }: Props) {
 
     return (
         <div className="flex flex-col items-center justify-center max-w-[200px]">
-            <div className="border-4 bg-gray-100 mb-4">
+            <div className="border bg-gray-100 mb-4">
                 {image ? (
                     <Image
                         src={image}
