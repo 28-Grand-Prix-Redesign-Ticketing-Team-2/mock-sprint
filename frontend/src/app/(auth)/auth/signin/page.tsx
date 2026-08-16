@@ -1,11 +1,12 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+
 import { FullPageSpinner } from '@/components/shared/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
 import { loginSchema, type LoginInput } from '@/lib/validations/auth'
@@ -26,7 +27,10 @@ const INVALID_CREDENTIAL_CODES = new Set([
 function isInvalidCredentialsError(error: unknown): boolean {
   const candidate =
     typeof error === 'object' && error !== null
-      ? (error as { code?: unknown; message?: unknown })
+      ? (error as {
+          code?: unknown
+          message?: unknown
+        })
       : null
 
   const code = typeof candidate?.code === 'string' ? candidate.code.toLowerCase() : ''
@@ -49,7 +53,7 @@ function isInvalidCredentialsError(error: unknown): boolean {
 }
 
 function wait(milliseconds: number) {
-  return new Promise((resolve) => {
+  return new Promise<void>((resolve) => {
     window.setTimeout(resolve, milliseconds)
   })
 }
@@ -64,10 +68,11 @@ export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false)
 
   /*
-   * Prevent the existing authenticated-user redirect from
-   * immediately hiding the successful-login Figma state.
+   * State is used instead of a ref so React can safely
+   * track whether authentication was initiated from
+   * this page.
    */
-  const loginStartedHere = useRef(false)
+  const [loginStartedHere, setLoginStartedHere] = useState(false)
 
   const {
     register,
@@ -77,11 +82,18 @@ export default function SignInPage() {
     resolver: zodResolver(loginSchema),
   })
 
+  /*
+   * Redirect users who were already authenticated
+   * before arriving on the Sign In page.
+   *
+   * When authentication starts from this page,
+   * allow the inline success state to display first.
+   */
   useEffect(() => {
-    if (!loading && user && !loginStartedHere.current) {
+    if (!loading && user && !loginStartedHere) {
       router.replace('/team')
     }
-  }, [loading, user, router])
+  }, [loading, user, loginStartedHere, router])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -101,10 +113,6 @@ export default function SignInPage() {
       message: 'Signed in successfully',
     })
 
-    /*
-     * Briefly keep the successful-login state visible so the
-     * user can actually see the Figma success banner.
-     */
     await wait(1000)
 
     router.replace('/team')
@@ -113,18 +121,19 @@ export default function SignInPage() {
 
   const onSubmit = async (data: LoginInput) => {
     setSignInNotice(null)
-    loginStartedHere.current = true
+    setLoginStartedHere(true)
 
     try {
       await signInWithEmail(data.email, data.password)
 
       /*
-       * No toast.success() here.
-       * Success is displayed using the inline Figma banner.
+       * Successful login uses the approved
+       * inline Figma success message.
+       * No top-right success toast.
        */
       await showSuccessAndRedirect()
     } catch (error: unknown) {
-      loginStartedHere.current = false
+      setLoginStartedHere(false)
 
       const errorMessage = error instanceof Error ? error.message.toLowerCase() : ''
 
@@ -135,8 +144,9 @@ export default function SignInPage() {
         })
       } else if (isInvalidCredentialsError(error)) {
         /*
-         * No toast for invalid credentials.
-         * Only the inline Figma error banner is shown.
+         * Invalid credentials use only the
+         * inline Figma error message.
+         * No top-right error toast.
          */
         setSignInNotice({
           kind: 'invalid-credentials',
@@ -157,18 +167,14 @@ export default function SignInPage() {
 
   const handleGoogleSignIn = async () => {
     setSignInNotice(null)
-    loginStartedHere.current = true
+    setLoginStartedHere(true)
 
     try {
       await signInWithGoogle()
 
-      /*
-       * Successful Google sign-in uses the same
-       * inline success state instead of a toast.
-       */
       await showSuccessAndRedirect()
     } catch {
-      loginStartedHere.current = false
+      setLoginStartedHere(false)
 
       toast.error('Google sign-in failed. Please try again.')
     }
@@ -202,7 +208,6 @@ export default function SignInPage() {
           <span className="h-px flex-1 bg-[#9ba5b7]/80" />
         </div>
 
-        {/* Authentication success/error banner */}
         {signInNotice && (
           <p
             role={isSuccess ? 'status' : 'alert'}
@@ -215,12 +220,10 @@ export default function SignInPage() {
           >
             {signInNotice.kind === 'invalid-credentials' ? (
               <>
-                {/* Mobile Figma message */}
                 <span className="sm:hidden">
                   The email address or password you entered is incorrect!
                 </span>
 
-                {/* Desktop Figma message */}
                 <span className="hidden sm:inline">Invalid email or password</span>
               </>
             ) : (
