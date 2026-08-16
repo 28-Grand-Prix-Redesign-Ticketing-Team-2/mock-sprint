@@ -12,30 +12,31 @@ type Props = {
 
 export default function TeamMemberCard( { name, role, blurb, image }: Props) {
     const [expand, setExpand] = useState<boolean>(false)
+    const [imageError, setImageError] = useState<boolean>(false)
 
     const isBlurbLong = blurb ? blurb.length > 20 : false
     const displayBlurb = blurb && isBlurbLong && !expand
         ? blurb.slice(0, 20) + "..."
         : blurb
 
+    const displayImage = image && !imageError
+
     return (
         <div className='border rounded-2xl bg-white p-4'>
             <div className="flex flex-col items-center justify-center max-w-[300px]">
                 <div className="border bg-gray-100 mb-4">
-                    {image ? (
+                    {displayImage ? (
                         <Image
                             src={image}
                             alt="Photo"
                             width={300}
                             height={300}
+                            onError={() => setImageError(true)}
                         />
                     ) : (
-                        <Image
-                            src="/close_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png"
-                            alt="Photo"
-                            width={300}
-                            height={300}
-                        />
+                        <div className="w-[300px] h-[300px] flex items-center justify-center">
+                           {image ? "Image failed to load" : "Photo Unavailable"}
+                        </div>
                     )}
                 </div>
                 
