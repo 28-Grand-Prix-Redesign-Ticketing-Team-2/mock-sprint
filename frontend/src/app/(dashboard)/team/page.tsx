@@ -45,16 +45,21 @@ export default async function TeamPage() {
   return (
     <main className="mx-auto flex w-full max-w-[1160px] flex-col items-center gap-7 text-[#545f71] min-[1440px]:gap-8">
       <header className="flex w-full flex-col items-center gap-2">
-        <h1 className="text-center text-[28px] font-bold text-[#343d4e] min-[1440px]:text-[32px]">
+        <h1 className="text-center text-[28px] font-bold text-[#343D4E] min-[1440px]:text-[32px]">
           Meet Our Team
         </h1>
-        <h2 className="w-[280px] max-w-full text-center text-sm font-medium text-[#606f7b] min-[1440px]:text-[13px]">
+
+        <p className="text-center text-xs font-normal text-[#606F7B] min-[1440px]:text-[13px]">
+          Get to know the people behind our project
+        </p>
+
+        <h2 className="w-[280px] max-w-full text-center text-sm font-medium text-[#343D4E] min-[1440px]:text-[13px]">
           Team 28 - Grand Prix Redesigning Ticketing - Team 2
         </h2>
       </header>
 
       <section className="flex w-full justify-center">
-        <div className="grid w-full grid-cols-1 justify-items-center gap-8 sm:grid-cols-2 min-[1440px]:grid-cols-3 min-[1440px]:justify-items-stretch min-[1440px]:gap-x-6 min-[1440px]:gap-y-8 min-[1440px]:px-10">
+        <div className="grid w-full grid-cols-1 justify-items-center gap-8 min-[1440px]:grid-cols-3 min-[1440px]:justify-items-stretch min-[1440px]:gap-x-6 min-[1440px]:gap-y-8 min-[1440px]:px-10">
           {teamMembers.map((member) => (
             <TeamMemberCard
               key={member.name}

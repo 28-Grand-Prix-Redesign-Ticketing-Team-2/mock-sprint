@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
@@ -10,7 +10,10 @@ import { FullPageSpinner } from '@/components/shared/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
 import { loginSchema, type LoginInput } from '@/lib/validations/auth'
 
-type SignInError = { kind: 'invalid-credentials' } | { kind: 'message'; message: string }
+type SignInNotice =
+  | { kind: 'invalid-credentials' }
+  | { kind: 'error'; message: string }
+  | { kind: 'success'; message: string }
 
 const INVALID_CREDENTIAL_CODES = new Set([
   'auth/invalid-credential',
@@ -25,7 +28,9 @@ function isInvalidCredentialsError(error: unknown): boolean {
     typeof error === 'object' && error !== null
       ? (error as { code?: unknown; message?: unknown })
       : null
+
   const code = typeof candidate?.code === 'string' ? candidate.code.toLowerCase() : ''
+
   const message =
     typeof candidate?.message === 'string'
       ? candidate.message.toLowerCase()
@@ -43,11 +48,27 @@ function isInvalidCredentialsError(error: unknown): boolean {
   )
 }
 
+function wait(milliseconds: number) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, milliseconds)
+  })
+}
+
 export default function SignInPage() {
   const router = useRouter()
+
   const { user, loading, signInWithEmail, signInWithGoogle } = useAuth()
-  const [signInError, setSignInError] = useState<SignInError | null>(null)
+
+  const [signInNotice, setSignInNotice] = useState<SignInNotice | null>(null)
+
   const [showPassword, setShowPassword] = useState(false)
+
+  /*
+   * Prevent the existing authenticated-user redirect from
+   * immediately hiding the successful-login Figma state.
+   */
+  const loginStartedHere = useRef(false)
+
   const {
     register,
     handleSubmit,
@@ -57,59 +78,109 @@ export default function SignInPage() {
   })
 
   useEffect(() => {
-    if (!loading && user) router.replace('/team')
+    if (!loading && user && !loginStartedHere.current) {
+      router.replace('/team')
+    }
   }, [loading, user, router])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
+
     if (params.get('verification') === 'sent') {
       toast.success('Verification email sent. Verify your email, then sign in.')
     }
   }, [])
 
-  if (loading) return <FullPageSpinner />
+  if (loading) {
+    return <FullPageSpinner />
+  }
+
+  const showSuccessAndRedirect = async () => {
+    setSignInNotice({
+      kind: 'success',
+      message: 'Signed in successfully',
+    })
+
+    /*
+     * Briefly keep the successful-login state visible so the
+     * user can actually see the Figma success banner.
+     */
+    await wait(1000)
+
+    router.replace('/team')
+    router.refresh()
+  }
 
   const onSubmit = async (data: LoginInput) => {
-    setSignInError(null)
+    setSignInNotice(null)
+    loginStartedHere.current = true
 
     try {
       await signInWithEmail(data.email, data.password)
-      toast.success('Signed in successfully')
-      router.replace('/team')
-      router.refresh()
+
+      /*
+       * No toast.success() here.
+       * Success is displayed using the inline Figma banner.
+       */
+      await showSuccessAndRedirect()
     } catch (error: unknown) {
+      loginStartedHere.current = false
+
       const errorMessage = error instanceof Error ? error.message.toLowerCase() : ''
 
       if (errorMessage.includes('email-not-verified')) {
-        setSignInError({
-          kind: 'message',
+        setSignInNotice({
+          kind: 'error',
           message: 'Please verify your email before signing in.',
         })
       } else if (isInvalidCredentialsError(error)) {
-        setSignInError({ kind: 'invalid-credentials' })
-        toast.error('Invalid email or password')
+        /*
+         * No toast for invalid credentials.
+         * Only the inline Figma error banner is shown.
+         */
+        setSignInNotice({
+          kind: 'invalid-credentials',
+        })
       } else {
         const message =
           'We could not sign you in because the authentication service returned an unexpected response. Please check your connection and try again!'
-        setSignInError({ kind: 'message', message })
+
+        setSignInNotice({
+          kind: 'error',
+          message,
+        })
+
         toast.error(message)
       }
     }
   }
 
   const handleGoogleSignIn = async () => {
+    setSignInNotice(null)
+    loginStartedHere.current = true
+
     try {
       await signInWithGoogle()
-      router.replace('/team')
+
+      /*
+       * Successful Google sign-in uses the same
+       * inline success state instead of a toast.
+       */
+      await showSuccessAndRedirect()
     } catch {
+      loginStartedHere.current = false
+
       toast.error('Google sign-in failed. Please try again.')
     }
   }
+
+  const isSuccess = signInNotice?.kind === 'success'
 
   return (
     <main className="flex w-full flex-col gap-[18px] text-[#545f71] sm:gap-4">
       <header className="flex flex-col gap-[18px] text-center sm:gap-4">
         <h1 className="text-[32px] leading-[normal] font-bold sm:text-[48px]">Welcome back!</h1>
+
         <p className="text-base leading-[normal]">Sign in to continue to your account.</p>
       </header>
 
@@ -125,24 +196,35 @@ export default function SignInPage() {
 
         <div className="flex h-[19px] items-center gap-3 sm:h-[17px]" aria-label="or">
           <span className="h-px flex-1 bg-[#9ba5b7]/80" />
+
           <span className="text-sm sm:text-xs">OR</span>
+
           <span className="h-px flex-1 bg-[#9ba5b7]/80" />
         </div>
 
-        {signInError && (
+        {/* Authentication success/error banner */}
+        {signInNotice && (
           <p
-            role="alert"
-            className="flex min-h-[58px] items-center rounded-[6px] border border-[#dc2626] bg-[#ffeeee] px-3 py-2.5 text-left text-base text-[#b91c1c] sm:justify-center sm:text-center"
+            role={isSuccess ? 'status' : 'alert'}
+            data-testid={isSuccess ? 'authentication-success' : 'authentication-error'}
+            className={
+              isSuccess
+                ? 'flex min-h-[58px] items-center justify-center rounded-[6px] border border-[#16a34a] bg-[#ecfdf3] px-3 py-2.5 text-center text-base text-[#15803d]'
+                : 'flex min-h-[58px] items-center rounded-[6px] border border-[#dc2626] bg-[#ffeeee] px-3 py-2.5 text-left text-base text-[#b91c1c] sm:justify-center sm:text-center'
+            }
           >
-            {signInError.kind === 'invalid-credentials' ? (
+            {signInNotice.kind === 'invalid-credentials' ? (
               <>
+                {/* Mobile Figma message */}
                 <span className="sm:hidden">
                   The email address or password you entered is incorrect!
                 </span>
+
+                {/* Desktop Figma message */}
                 <span className="hidden sm:inline">Invalid email or password</span>
               </>
             ) : (
-              signInError.message
+              signInNotice.message
             )}
           </p>
         )}
@@ -152,6 +234,7 @@ export default function SignInPage() {
             <label htmlFor="email" className="text-base sm:text-sm">
               Email
             </label>
+
             <input
               id="email"
               type="email"
@@ -162,6 +245,7 @@ export default function SignInPage() {
               placeholder="you@example.com"
               {...register('email')}
             />
+
             {errors.email && (
               <p id="email-error" className="text-xs text-[#b91c1c]" role="alert">
                 {errors.email.message}
@@ -173,6 +257,7 @@ export default function SignInPage() {
             <label htmlFor="password" className="text-base sm:text-sm">
               Password
             </label>
+
             <div className="relative">
               <input
                 id="password"
@@ -184,6 +269,7 @@ export default function SignInPage() {
                 placeholder="••••••••"
                 {...register('password')}
               />
+
               <button
                 type="button"
                 onClick={() => setShowPassword((visible) => !visible)}
@@ -199,6 +285,7 @@ export default function SignInPage() {
                 />
               </button>
             </div>
+
             {errors.password && (
               <p id="password-error" className="text-xs text-[#b91c1c]" role="alert">
                 {errors.password.message}
