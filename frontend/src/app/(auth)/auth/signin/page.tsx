@@ -199,16 +199,6 @@ export default function SignInPage() {
           {isSubmitting ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
-
-      <div className="text-center text-sm text-zinc-500">
-        <Link
-          href="#"
-          className="font-medium text-[#545f71] underline dark:text-white"
-          onClick={() => alert("Hellow World!")}
-        >
-          Forgot Password
-        </Link>
-      </div>
     </div>
   )
 }
