@@ -48,9 +48,7 @@ afterEach(() => {
 
 describe('Edge Cases and Bugs', () => {
   it('Rejects invalid credentials', async () => {
-    mocks.signInWithEmail.mockRejectedValueOnce(
-      new Error('Invalid email or password')
-    )
+    mocks.signInWithEmail.mockRejectedValueOnce(new Error('Invalid email or password'))
 
     render(<SignInPage />)
 
@@ -83,9 +81,9 @@ describe('Edge Cases and Bugs', () => {
   })
 
   it('Displays the existing authentication error for invalid credentials', async () => {
-    mocks.signInWithEmail.mockRejectedValueOnce(
-      new Error('Invalid email or password')
-    )
+    mocks.signInWithEmail.mockRejectedValueOnce({
+      code: 'auth/invalid-credential',
+    })
 
     render(<SignInPage />)
 
@@ -108,22 +106,21 @@ describe('Edge Cases and Bugs', () => {
     )
 
     await waitFor(() => {
-      expect(mocks.toastError).toHaveBeenCalledWith(
-        'Invalid email or password'
-      )
+      expect(mocks.toastError).toHaveBeenCalledWith('Invalid email or password')
     })
+
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent('The email address or password you entered is incorrect!')
+    expect(alert).toHaveTextContent('Invalid email or password')
+    expect(screen.getByText('Invalid email or password')).toHaveClass('hidden', 'sm:inline')
   })
 
   it('Password visibility control does not display an unrelated popup', () => {
-    const alertMock = vi
-      .spyOn(window, 'alert')
-      .mockImplementation(() => {})
+    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {})
 
     render(<SignInPage />)
 
-    fireEvent.click(
-      screen.getByAltText(/visibility/i)
-    )
+    fireEvent.click(screen.getByAltText(/visibility/i))
 
     expect(alertMock).not.toHaveBeenCalled()
   })
