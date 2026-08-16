@@ -1,22 +1,53 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
+import { FullPageSpinner } from '@/components/shared/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
 import { loginSchema, type LoginInput } from '@/lib/validations/auth'
-import { FullPageSpinner } from '@/components/shared/LoadingSpinner'
-import Image from 'next/image'
+
+type SignInError = { kind: 'invalid-credentials' } | { kind: 'message'; message: string }
+
+const INVALID_CREDENTIAL_CODES = new Set([
+  'auth/invalid-credential',
+  'auth/invalid-email',
+  'auth/invalid-login-credentials',
+  'auth/user-not-found',
+  'auth/wrong-password',
+])
+
+function isInvalidCredentialsError(error: unknown): boolean {
+  const candidate =
+    typeof error === 'object' && error !== null
+      ? (error as { code?: unknown; message?: unknown })
+      : null
+  const code = typeof candidate?.code === 'string' ? candidate.code.toLowerCase() : ''
+  const message =
+    typeof candidate?.message === 'string'
+      ? candidate.message.toLowerCase()
+      : typeof error === 'string'
+        ? error.toLowerCase()
+        : ''
+
+  return (
+    INVALID_CREDENTIAL_CODES.has(code) ||
+    message.includes('invalid credential') ||
+    message.includes('invalid email or password') ||
+    message.includes('invalid login credentials') ||
+    message.includes('wrong-password') ||
+    message.includes('user-not-found')
+  )
+}
 
 export default function SignInPage() {
   const router = useRouter()
   const { user, loading, signInWithEmail, signInWithGoogle } = useAuth()
-  const [signInError, setSignInError] = useState<string | null>(null)
-  const [focusEmail, setFocusEmail] = useState<boolean>(false)
-
+  const [signInError, setSignInError] = useState<SignInError | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
   const {
     register,
     handleSubmit,
@@ -25,12 +56,8 @@ export default function SignInPage() {
     resolver: zodResolver(loginSchema),
   })
 
-  const { onBlur: rhfEmailBlur, ...registerEmail } = register('email')
-
   useEffect(() => {
-    if (!loading && user) {
-      router.replace('/dashboard')
-    }
+    if (!loading && user) router.replace('/team')
   }, [loading, user, router])
 
   useEffect(() => {
@@ -43,19 +70,29 @@ export default function SignInPage() {
   if (loading) return <FullPageSpinner />
 
   const onSubmit = async (data: LoginInput) => {
+    setSignInError(null)
+
     try {
       await signInWithEmail(data.email, data.password)
       toast.success('Signed in successfully')
       router.replace('/team')
       router.refresh()
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Invalid email or password'
-      if (error instanceof Error && error.message.includes('email-not-verified')) {
-        setSignInError('Please verify your email before signing in.')
-        toast.error('Please verify your email before signing in.')
+      const errorMessage = error instanceof Error ? error.message.toLowerCase() : ''
+
+      if (errorMessage.includes('email-not-verified')) {
+        setSignInError({
+          kind: 'message',
+          message: 'Please verify your email before signing in.',
+        })
+      } else if (isInvalidCredentialsError(error)) {
+        setSignInError({ kind: 'invalid-credentials' })
+        toast.error('Invalid email or password')
       } else {
-        setSignInError('The email address or password you entered is incorrect!')
-        toast.error(errorMessage)
+        const message =
+          'We could not sign you in because the authentication service returned an unexpected response. Please check your connection and try again!'
+        setSignInError({ kind: 'message', message })
+        toast.error(message)
       }
     }
   }
@@ -63,145 +100,121 @@ export default function SignInPage() {
   const handleGoogleSignIn = async () => {
     try {
       await signInWithGoogle()
-      router.replace('/dashboard')
+      router.replace('/team')
     } catch {
       toast.error('Google sign-in failed. Please try again.')
     }
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-1 text-center">
-        <h1 className="text-[48px] text-[#545F71] font-bold tracking-tight">Welcome back!</h1>
-        <div className='flex items-center justify-center'>
-          <p className='text-[#545f71]'>
-            {/* Login below or {""}
-            <Link
-              href="/auth/signup"
-              className="font-bold underline dark:text-white">
-               create an account
-            </Link> */}
-            Sign in to contunie to your account.
-          </p>
-        </div>
-      </div>
-      <button
-        type="button"
-        onClick={handleGoogleSignIn}
-        className="text-[#545F71] flex w-full items-center justify-center gap-3 rounded-md border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium shadow-sm transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800"
-      >
-        <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-            fill="#545F71"
-          />
-          <path
-            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-            fill="#545F71"
-          />
-          <path
-            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-            fill="#545F71"
-          />
-          <path
-            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-            fill="#545F71"
-          />
-        </svg>
-        Continue with Google
-      </button>
+    <main className="flex w-full flex-col gap-[18px] text-[#545f71] sm:gap-4">
+      <header className="flex flex-col gap-[18px] text-center sm:gap-4">
+        <h1 className="text-[32px] leading-[normal] font-bold sm:text-[48px]">Welcome back!</h1>
+        <p className="text-base leading-[normal]">Sign in to continue to your account.</p>
+      </header>
 
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-zinc-200 dark:border-zinc-700" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-[#EBF5FE] px-2 text-zinc-400 dark:bg-zinc-950">or</span>
-        </div>
-      </div>
-
-      {signInError && (
-        <p
-          role="alert"
-          className="rounded-md border border-red-500 bg-red-50 px-3 py-2 text-sm text-red-600"
+      <div className="flex flex-col gap-4">
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          className="flex h-[50px] w-full items-center justify-center gap-3 rounded-[6px] border border-[#9ba5b7] bg-white px-4 text-base font-bold transition-colors hover:bg-[#eef1f4] focus-visible:ring-2 focus-visible:ring-[#2e6bd1] focus-visible:outline-none"
         >
-          {signInError}
-        </p>
-      )}
+          <span aria-hidden="true">G</span>
+          Continue with Google
+        </button>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-1.5">
-          <label htmlFor="email" className="text-sm font-medium text-[#545f71]">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            onFocus={() => setFocusEmail(true)}
-            onBlur={(e) => {
-              setFocusEmail(false)
-              rhfEmailBlur(e)}}
-            aria-invalid={!!errors.email}
-            aria-describedby={errors.email ? 'email-error' : undefined}
-            className="w-full rounded-md border border-black bg-white px-3 py-2 text-sm shadow-sm placeholder:text-zinc-400 focus:ring-2 focus:ring-blue-500 focus:outline-none aria-invalid:border-red-500 dark:border-zinc-700 dark:bg-zinc-900"
-            placeholder="boilerplate@gmail.com"
-            {...registerEmail}
-          />
-          {focusEmail && !errors.email && (
-            <p id="email-hint" className="text-xs text-blue-500">
-              Keyboard focus is visible on the active field.
-            </p>
-          )}
-          {errors.email && (
-            <p id="email-error" className="text-xs text-red-500" role="alert">
-              {errors.email.message}
-            </p>
-          )}
+        <div className="flex h-[19px] items-center gap-3 sm:h-[17px]" aria-label="or">
+          <span className="h-px flex-1 bg-[#9ba5b7]/80" />
+          <span className="text-sm sm:text-xs">OR</span>
+          <span className="h-px flex-1 bg-[#9ba5b7]/80" />
         </div>
 
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label htmlFor="password" className="text-sm font-medium text-[#545f71]">
+        {signInError && (
+          <p
+            role="alert"
+            className="flex min-h-[58px] items-center rounded-[6px] border border-[#dc2626] bg-[#ffeeee] px-3 py-2.5 text-left text-base text-[#b91c1c] sm:justify-center sm:text-center"
+          >
+            {signInError.kind === 'invalid-credentials' ? (
+              <>
+                <span className="sm:hidden">
+                  The email address or password you entered is incorrect!
+                </span>
+                <span className="hidden sm:inline">Invalid email or password</span>
+              </>
+            ) : (
+              signInError.message
+            )}
+          </p>
+        )}
+
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="email" className="text-base sm:text-sm">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              aria-invalid={!!errors.email}
+              aria-describedby={errors.email ? 'email-error' : undefined}
+              className="h-[50px] w-full rounded-[6px] border border-[#545f71] bg-white px-[14px] text-base text-[#545f71] placeholder:text-[#545f71] focus-visible:ring-2 focus-visible:ring-[#2e6bd1] focus-visible:outline-none aria-invalid:border-[#dc2626]"
+              placeholder="you@example.com"
+              {...register('email')}
+            />
+            {errors.email && (
+              <p id="email-error" className="text-xs text-[#b91c1c]" role="alert">
+                {errors.email.message}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="password" className="text-base sm:text-sm">
               Password
             </label>
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                aria-invalid={!!errors.password}
+                aria-describedby={errors.password ? 'password-error' : undefined}
+                className="h-[50px] w-full rounded-[6px] border border-[#545f71] bg-white px-[14px] pr-12 text-base text-[#545f71] placeholder:text-[#545f71] focus-visible:ring-2 focus-visible:ring-[#2e6bd1] focus-visible:outline-none aria-invalid:border-[#dc2626]"
+                placeholder="••••••••"
+                {...register('password')}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((visible) => !visible)}
+                aria-label={showPassword ? 'Conceal value' : 'Reveal value'}
+                className="absolute top-1/2 right-[13px] flex size-6 -translate-y-1/2 items-center justify-center rounded-sm focus-visible:ring-2 focus-visible:ring-[#2e6bd1] focus-visible:outline-none"
+              >
+                <Image
+                  src="/visibility_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png"
+                  alt="Visibility"
+                  width={20}
+                  height={20}
+                  className="size-5 opacity-70"
+                />
+              </button>
+            </div>
+            {errors.password && (
+              <p id="password-error" className="text-xs text-[#b91c1c]" role="alert">
+                {errors.password.message}
+              </p>
+            )}
           </div>
-          <div className='relative'>
-            <input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            aria-invalid={!!errors.password}
-            aria-describedby={errors.password ? 'password-error' : undefined}
-            className="relative w-full rounded-md border border-black bg-white px-3 py-2 text-sm shadow-sm placeholder:text-zinc-400 focus:ring-2 focus:ring-blue-500 focus:outline-none aria-invalid:border-red-500 dark:border-zinc-700 dark:bg-zinc-900"
-            placeholder="••••••"
-            {...register('password')}
-          />
-          <span className='absolute right-3 top-1/2 -translate-y-1/2'>
-            <Image
-              src="/visibility_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png"
-              alt='Visibility'
-              width={20}
-              height={20}
-              className='cursor-pointer'/>
-          </span>
-          </div>
-          
-          {errors.password && (
-            <p id="password-error" className="text-xs text-red-500" role="alert">
-              {errors.password.message}
-            </p>
-          )}
-        </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full rounded-md bg-[#545f71] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
-        >
-          {isSubmitting ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
-    </div>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="h-[50px] w-full rounded-[6px] bg-[#545f71] px-4 text-base font-bold text-white transition-colors hover:bg-[#454f60] focus-visible:ring-2 focus-visible:ring-[#2e6bd1] focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-65"
+          >
+            {isSubmitting ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
+      </div>
+    </main>
   )
 }
