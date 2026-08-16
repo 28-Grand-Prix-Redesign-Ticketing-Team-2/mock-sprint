@@ -30,10 +30,6 @@ export function Sidebar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
-    setMobileMenuOpen(false)
-  }, [pathname])
-
-  useEffect(() => {
     if (!mobileMenuOpen) {
       document.body.style.overflow = ''
       return
@@ -147,7 +143,7 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile hamburger icon only */}
+      {/* Mobile hamburger icon */}
       <button
         type="button"
         onClick={() => setMobileMenuOpen(true)}
@@ -184,9 +180,7 @@ export function Sidebar() {
         {/* Mobile sidebar */}
         <aside
           className={cn(
-            'absolute top-0 left-0 flex h-full w-[280px] max-w-[85vw] flex-col',
-            'border-r border-[#9ba5b7] bg-[#ebf5fe] shadow-xl',
-            'transition-transform duration-300 ease-out',
+            'absolute top-0 left-0 flex h-full w-[280px] max-w-[85vw] flex-col border-r border-[#9ba5b7] bg-[#ebf5fe] shadow-xl transition-transform duration-300 ease-out',
             mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
           )}
           aria-label="Mobile navigation"
