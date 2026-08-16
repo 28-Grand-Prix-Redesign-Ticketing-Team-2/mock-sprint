@@ -159,49 +159,40 @@ export function Sidebar() {
         {renderNavigation()}
       </aside>
 
-      {/* Mobile menu */}
-      <div
-        className={cn(
-          'fixed inset-0 z-50 lg:hidden',
-          mobileMenuOpen ? 'pointer-events-auto visible' : 'pointer-events-none invisible'
-        )}
-      >
-        {/* Overlay */}
-        <button
-          type="button"
-          aria-label="Close navigation menu"
-          onClick={() => setMobileMenuOpen(false)}
-          className={cn(
-            'absolute inset-0 bg-black/35 transition-opacity duration-200',
-            mobileMenuOpen ? 'opacity-100' : 'opacity-0'
-          )}
-        />
+      {/* Mobile menu (only rendered when open) */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Overlay */}
+          <button
+            type="button"
+            aria-label="Close navigation menu"
+            onClick={() => setMobileMenuOpen(false)}
+            className="absolute inset-0 bg-black/35 transition-opacity duration-200"
+          />
 
-        {/* Mobile sidebar */}
-        <aside
-          className={cn(
-            'absolute top-0 left-0 flex h-full w-[280px] max-w-[85vw] flex-col border-r border-[#9ba5b7] bg-[#ebf5fe] shadow-xl transition-transform duration-300 ease-out',
-            mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-          )}
-          aria-label="Mobile navigation"
-        >
-          {/* Close button */}
-          <div className="flex h-14 shrink-0 items-center justify-end px-[18px]">
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(false)}
-              aria-label="Close navigation menu"
-              className="flex h-10 w-10 items-center justify-center rounded-lg text-[#545f71] transition-colors hover:bg-[#dceaf6] focus-visible:ring-2 focus-visible:ring-[#2e6bd1] focus-visible:outline-none"
-            >
-              <X aria-hidden="true" className="h-6 w-6" />
-            </button>
-          </div>
+          {/* Mobile sidebar */}
+          <aside
+            className="absolute top-0 left-0 flex h-full w-[280px] max-w-[85vw] flex-col border-r border-[#9ba5b7] bg-[#ebf5fe] shadow-xl transition-transform duration-300 ease-out"
+            aria-label="Mobile navigation"
+          >
+            {/* Close button */}
+            <div className="flex h-14 shrink-0 items-center justify-end px-[18px]">
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label="Close navigation menu"
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-[#545f71] transition-colors hover:bg-[#dceaf6] focus-visible:ring-2 focus-visible:ring-[#2e6bd1] focus-visible:outline-none"
+              >
+                <X aria-hidden="true" className="h-6 w-6" />
+              </button>
+            </div>
 
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-[22px] pb-6">
-            {renderNavigation(true)}
-          </div>
-        </aside>
-      </div>
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-[22px] pb-6">
+              {renderNavigation(true)}
+            </div>
+          </aside>
+        </div>
+      )}
     </>
   )
 }
