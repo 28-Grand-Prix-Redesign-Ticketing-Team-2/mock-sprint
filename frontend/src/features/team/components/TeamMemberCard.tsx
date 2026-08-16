@@ -19,8 +19,8 @@ export default function TeamMemberCard({ name, role, blurb, image }: Props) {
   const displayImage = image && !imageError
 
   return (
-    <article className="mx-auto flex w-full flex-col items-center gap-3 text-center min-[1440px]:w-[380px] min-[1440px]:max-w-full min-[1440px]:gap-3 min-[1440px]:rounded-xl min-[1440px]:border min-[1440px]:border-[#a0aec0] min-[1440px]:bg-white min-[1440px]:px-4 min-[1440px]:py-5 min-[1440px]:shadow-[0_4px_6px_rgba(0,0,0,0.03)]">
-      <div className="flex aspect-square w-[180px] shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#a0aec0] bg-[#e2e8f0] text-[13px] text-[#606f7b] min-[1440px]:w-[200px]">
+    <article className="mx-auto flex w-full flex-col items-center gap-3 text-center min-[1440px]:w-[380px] min-[1440px]:max-w-full min-[1440px]:gap-4 min-[1440px]:rounded-xl min-[1440px]:border min-[1440px]:border-[#a0aec0] min-[1440px]:bg-white min-[1440px]:p-5 min-[1440px]:shadow-[0_4px_6px_rgba(0,0,0,0.03)]">
+      <div className="flex h-[140px] w-[220px] shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-[#a0aec0] bg-[#e2e8f0] text-[13px] text-[#606f7b] min-[1440px]:h-auto min-[1440px]:w-full min-[1440px]:border min-[1440px]:aspect-square">
         {displayImage ? (
           <Image
             src={image}
