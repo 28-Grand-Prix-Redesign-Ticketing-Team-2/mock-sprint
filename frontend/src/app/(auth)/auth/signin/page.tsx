@@ -49,10 +49,13 @@ export default function SignInPage() {
       router.replace('/team')
       router.refresh()
     } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Invalid email or password'
       if (error instanceof Error && error.message.includes('email-not-verified')) {
         setSignInError('Please verify your email before signing in.')
+        toast.error('Please verify your email before signing in.')
       } else {
         setSignInError('The email address or password you entered is incorrect!')
+        toast.error(errorMessage)
       }
     }
   }
